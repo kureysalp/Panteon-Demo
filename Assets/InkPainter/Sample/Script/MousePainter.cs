@@ -35,9 +35,11 @@ namespace Es.InkPainter.Sample
 				if(Physics.Raycast(ray, out hitInfo))
 				{
 					var paintObject = hitInfo.transform.GetComponent<InkCanvas>();
-					if(paintObject != null)
-						switch(useMethodType)
-						{
+					if (paintObject != null)
+					{
+						EventManager.StartPainting();						
+						switch (useMethodType)
+						{							
 							case UseMethodType.RaycastHitInfo:
 								success = erase ? paintObject.Erase(brush, hitInfo) : paintObject.Paint(brush, hitInfo);
 								break;
@@ -51,24 +53,33 @@ namespace Es.InkPainter.Sample
 								break;
 
 							case UseMethodType.DirectUV:
-								if(!(hitInfo.collider is MeshCollider))
+								if (!(hitInfo.collider is MeshCollider))
 									Debug.LogWarning("Raycast may be unexpected if you do not use MeshCollider.");
 								success = erase ? paintObject.EraseUVDirect(brush, hitInfo.textureCoord) : paintObject.PaintUVDirect(brush, hitInfo.textureCoord);
 								break;
-						}
+						}						
+					}
+					else
+						EventManager.EndPainting();
 					if(!success)
 						Debug.LogError("Failed to paint.");
 				}
+				else
+					EventManager.EndPainting();
 			}
+			
+			if(Input.GetMouseButtonUp(0))
+				EventManager.EndPainting();
+
 		}
 
 		public void OnGUI()
 		{
-			if(GUILayout.Button("Reset"))
+			/*if(GUILayout.Button("Reset"))
 			{
 				foreach(var canvas in FindObjectsOfType<InkCanvas>())
 					canvas.ResetPaint();
-			}
+			}*/
 		}
 	}
 }

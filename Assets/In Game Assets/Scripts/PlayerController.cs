@@ -13,6 +13,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float sensitivity;
     [SerializeField] private float maxSwerveAmount;
     [SerializeField] private float forwardSpeed;
+    [SerializeField] private float borderLimit;
 
     float lastFrameMousePosX;
     private void Start()
@@ -24,17 +25,26 @@ public class PlayerController : MonoBehaviour
     private void FixedUpdate()
     {
 #if UNITY_STANDALONE_WIN
-        
-
         if(Input.GetMouseButtonDown(0))
         {
             if (character.PlayerState == State.Idle)
-                character.PlayerState = State.Running;
+                EventManager.StartGame();
+
             lastFrameMousePosX = Input.mousePosition.x;
         }
         else if(Input.GetMouseButton(0))
-        {
-            swerveAmount = Mathf.Clamp((Input.mousePosition.x - lastFrameMousePosX) * Time.fixedDeltaTime * sensitivity, -maxSwerveAmount, maxSwerveAmount);
+        {            
+            float _inputDifference = Input.mousePosition.x - lastFrameMousePosX;
+            swerveAmount = Mathf.Clamp((_inputDifference) * Time.fixedDeltaTime * sensitivity, -maxSwerveAmount, maxSwerveAmount);
+
+            // Prevent falling off from borders of the platform.
+            RaycastHit _hit;
+            if (rb.SweepTest(transform.right * _inputDifference, out _hit, borderLimit))
+            {
+                if (_hit.transform.CompareTag("Border"))                                    
+                    swerveAmount = 0;
+            }
+
             lastFrameMousePosX = Input.mousePosition.x;
         }
         else if(Input.GetMouseButtonUp(0))        
@@ -64,7 +74,7 @@ public class PlayerController : MonoBehaviour
 
         if (character.PlayerState == State.Running)
             Movement();
-    }
+    }    
 
     public void Movement()
     {        

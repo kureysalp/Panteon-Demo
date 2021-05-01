@@ -1,23 +1,39 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public enum State
 {
     Idle,
-    Running,    
+    Running,
+    Painting,
     Won
+}
+
+enum CharacterType
+{
+    Player,
+    AI
 }
 
 public class Character : MonoBehaviour
 {
-    [SerializeField] State playerState;    
+    [SerializeField] State playerState;
+    [SerializeField] CharacterType characterType;
 
     Vector3 startPos;
     Vector3 lastCheckpoint;
 
     Animator anim;
     Rigidbody rb;
+
+    private int rank;
+
+    List<Transform> characters = new List<Transform>();
+    public GameObject characterParent;
+
+    public Text rankText;
 
     private void Start()
     {
@@ -28,13 +44,43 @@ public class Character : MonoBehaviour
         lastCheckpoint = transform.position;
 
         EventManager.GameReset += SetDefaults;
-        EventManager.ObstacleHit += GoCheckpoint;
+        EventManager.GameWon += WinGame;
+        EventManager.GameStarted += StartGame;
+
+
+        if (characterType == CharacterType.Player)
+            for (int i = 0; i < characterParent.transform.childCount; i++)
+            {
+                characters.Add(characterParent.transform.GetChild(i));
+            }
+
+    }
+
+    private void Update()
+    {        
+        if(characterType == CharacterType.Player)
+        {
+            rank = 1;
+            foreach (Transform character in characters)
+            {
+                if (character.position.z > transform.position.z)
+                    rank++;
+            }
+
+            rankText.text = rank + RankText(rank);
+        }
+    }
+
+    private void StartGame()
+    {
+        PlayerState = State.Running;
     }
 
     private void SetDefaults()
     {
         transform.position = startPos;
         PlayerState = State.Idle;
+        Debug.Log(playerState);
     }
 
     private void GoCheckpoint()
@@ -44,9 +90,10 @@ public class Character : MonoBehaviour
 
     private void OnCollisionEnter(Collision collision)
     {
-        if (collision.transform.CompareTag("Obstacle"))        
-            EventManager.HitObstacle();
-        else if(collision.collider.CompareTag("Stick"))
+        if (collision.transform.CompareTag("Obstacle"))
+            GoCheckpoint();
+
+        if(collision.collider.CompareTag("Stick"))
         {
             Vector3 _forceDirection = transform.position - collision.contacts[0].point;
             _forceDirection.y = 0;
@@ -59,13 +106,22 @@ public class Character : MonoBehaviour
     {
         if (other.CompareTag("Finish"))
         {
-            PlayerState = State.Won;
-            EventManager.WinGame();
+            if (characterType == CharacterType.Player)
+            {
+                PlayerState = State.Painting;
+                EventManager.GoPaintingState();
+            }
+            else
+                PlayerState = State.Idle;
         }
-        else if (other.CompareTag("Checkpoint"))
-            lastCheckpoint = other.transform.position;
 
+        if (other.CompareTag("Checkpoint"))
+            lastCheckpoint = transform.position;
+    }
 
+    private void WinGame()
+    {
+        PlayerState = State.Won;
     }
 
     public State PlayerState
@@ -76,5 +132,19 @@ public class Character : MonoBehaviour
             playerState = value;
             anim.SetInteger("state", (int)playerState);
         }
+    }
+
+    private string RankText(int rank)
+    {
+        if (rank == 1)
+            return "st";
+        else if (rank == 2)
+            return "nd";
+        else if (rank == 3)
+            return "rd";
+        else
+            return "th";
+
+
     }
 }

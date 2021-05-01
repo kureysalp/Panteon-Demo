@@ -1,6 +1,8 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
+using Es.InkPainter.Sample;
 
 public class CalculatePaint : MonoBehaviour
 {
@@ -13,11 +15,19 @@ public class CalculatePaint : MonoBehaviour
     
     int totalPixels;
     int paintedPixels;
+
+    float paintedPerctenage;
+
+    public Text percentageText;
     private void Start()
     {
         mesh = GetComponent<MeshRenderer>();
-        mainTex = mesh.sharedMaterial.GetTexture("_BaseMap") as Texture2D;
-        totalPixels = mainTex.width * mainTex.height;           
+        mainTex = ToTexture2D(mesh.sharedMaterial.mainTexture as RenderTexture); // Painter tool using Render Texture to paint so getting main texture as Render Texture and convertin to Texture2D.
+        totalPixels = mainTex.width * mainTex.height;
+
+        EventManager.PaintingState += GoPaintingState;
+        EventManager.StartedPainting += PaintingStarted;
+        EventManager.EndedPainting += PaintingEnded;        
     }
 
     private void Update()
@@ -35,18 +45,34 @@ public class CalculatePaint : MonoBehaviour
                         paintedPixels++;
                 }
             }
-            Debug.Log($"Paint perctenge= {Mathf.Round((float)paintedPixels / (float)totalPixels * 100)}%");
-        }
+
+            paintedPerctenage = Mathf.Round(paintedPixels / (float)totalPixels * 100);
+            percentageText.text = $"{paintedPerctenage}%";
+
+
+            if (paintedPerctenage == 100)            
+                EventManager.WinGame();            
+        }        
+    }
+
+    private void GoPaintingState()
+    {
+        Camera.main.GetComponent<MousePainter>().enabled = true;
+        percentageText.gameObject.SetActive(true);
+        paintedPerctenage = 0;
+        percentageText.text = $"{paintedPerctenage}%";
     }
 
     private void PaintingStarted()
-    {
+    {        
         painting = true;
     }
+
     private void PaintingEnded()
-    {
+    {        
         painting = false;
     }
+
 
 
     Texture2D ToTexture2D(RenderTexture rTex)

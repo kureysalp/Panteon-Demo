@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using Es.InkPainter.Effective;
+using Es.InkPainter.Sample;
 
 #if UNITY_EDITOR
 
@@ -275,6 +276,8 @@ namespace Es.InkPainter
 			SetRenderTexture();
 			if(OnInitializedAfter != null)
 				OnInitializedAfter(this);
+
+			EventManager.GameReset += ResetPaint;
 		}
 
 		private void OnDestroy()
@@ -681,7 +684,7 @@ namespace Es.InkPainter
 			if(OnPaintStart != null)
 			{
 				brush = brush.Clone() as Brush;
-				OnPaintStart(this, brush);
+				OnPaintStart(this, brush);				
 			}
 
 			var set = materialSelector == null ? paintSet : paintSet.Where(materialSelector);
@@ -851,6 +854,8 @@ namespace Es.InkPainter
 			SetRenderTexture();
 			if(OnInitializedAfter != null)
 				OnInitializedAfter(this);
+
+			Camera.main.GetComponent<MousePainter>().enabled = false;
 		}
 
 		/// <summary>
