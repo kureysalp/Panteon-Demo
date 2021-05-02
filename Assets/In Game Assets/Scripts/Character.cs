@@ -58,7 +58,7 @@ public class Character : MonoBehaviour
 
     private void Update()
     {        
-        if(characterType == CharacterType.Player)
+        if(characterType == CharacterType.Player && playerState != State.Won)
         {
             rank = 1;
             foreach (Transform character in characters)
@@ -106,6 +106,7 @@ public class Character : MonoBehaviour
     {
         if (other.CompareTag("Finish"))
         {
+            // Only player can paint, others directly going idle state.
             if (characterType == CharacterType.Player)
             {
                 PlayerState = State.Painting;
@@ -121,7 +122,9 @@ public class Character : MonoBehaviour
 
     private void WinGame()
     {
-        PlayerState = State.Won;
+        // Only player can paint. So winning after painting restricted only by player.
+        if (characterType == CharacterType.Player)
+            PlayerState = State.Won;
     }
 
     public State PlayerState

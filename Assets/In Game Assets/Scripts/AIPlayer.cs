@@ -4,9 +4,9 @@ using UnityEngine;
 
 enum AILevel
 {
-    Dumb = 5,
-    Average = 8,
-    Smart = 10
+    Dumb = 10,
+    Average = 20,
+    Smart = 30
 }
 
 public class AIPlayer : MonoBehaviour
@@ -18,7 +18,7 @@ public class AIPlayer : MonoBehaviour
 
     [SerializeField] private float forwardSpeed;
     [SerializeField] private float horizontalSpeed;
-    private int horizontalWay;
+    private float horizontalWay;
     
 
     private void Start()
@@ -27,7 +27,7 @@ public class AIPlayer : MonoBehaviour
         character = GetComponent<Character>();
     }
 
-    private void Update()
+    private void FixedUpdate()
     {
         if (character.PlayerState == State.Running)
         {
@@ -45,13 +45,14 @@ public class AIPlayer : MonoBehaviour
         {
             if (_hit.transform.CompareTag("Obstacle") || _hit.transform.CompareTag("Block"))
             {
+                Debug.Log(gameObject.name + " Gonna hit");
                 RaycastHit _hit2;
                 if (rb.SweepTest(transform.right, out _hit2, (int)aiLevel))
                 {
-                    if (!_hit2.transform.CompareTag("Obstacle") || !_hit2.transform.CompareTag("Border"))
-                        horizontalWay = -1;
+                    if (_hit2.transform.CompareTag("Obstacle") || _hit2.transform.CompareTag("Border") || _hit2.transform.CompareTag("Block"))
+                        horizontalWay = Mathf.Lerp(horizontalWay, -1, Time.deltaTime * (int)aiLevel * 1.5f);
                     else
-                        horizontalWay = 1;
+                        horizontalWay = Mathf.Lerp(horizontalWay, 1, Time.deltaTime * (int)aiLevel * 1.5f);
                 }
             }
         }
@@ -65,12 +66,13 @@ public class AIPlayer : MonoBehaviour
 
         rb.MovePosition(rb.position + _finalVelocity);
 
+        // Special movement if running on rotating platform.
         RaycastHit _hit;
         if (Physics.Raycast(transform.position, Vector3.down, out _hit, 1))
         {
             if (_hit.transform.CompareTag("Rotating Platform"))
             {
-                Vector3 _movementVector = Vector3.Lerp(rb.position, (new Vector3(0, rb.position.y, rb.position.z) + _forwardVelocity), Time.deltaTime * (int)aiLevel / 2);
+                Vector3 _movementVector = Vector3.Lerp(rb.position, (new Vector3(0, rb.position.y, rb.position.z) + _forwardVelocity), Time.deltaTime * (int)aiLevel / 20);
                 rb.MovePosition(_movementVector);
             }
         }        
